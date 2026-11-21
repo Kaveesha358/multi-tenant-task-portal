@@ -19,3 +19,11 @@ export function signRefreshToken(userId: string) {
     jwtid: randomUUID(),
   });
 }
+
+export function verifyAccessToken(token: string) {
+  const payload = jwt.verify(token, getSecret("JWT_ACCESS_SECRET"));
+  if (typeof payload === "string" || !payload.sub) {
+    throw new Error("INVALID_TOKEN");
+  }
+  return payload.sub;
+}

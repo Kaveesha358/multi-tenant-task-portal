@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { registerUser, loginUser } from "./auth.service";
+import { registerUser, loginUser, getUserById } from "./auth.service";
+import { requireAuth } from "../../middleware/auth";
 
 const router = Router();
 
@@ -61,6 +62,15 @@ router.post("/login", async (req, res) => {
     console.error(err);
     return res.status(500).json({ error: "Something went wrong" });
   }
+});
+
+router.get("/me", requireAuth, async (_req, res) => {
+  const user = await getUserById(res.locals.userId);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  res.json(user);
 });
 
 export default router;

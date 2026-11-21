@@ -44,3 +44,10 @@ export async function loginUser(email: string, password: string) {
     refreshToken,
   };
 }
+
+export function getUserById(id: string) {
+  return prisma.user.findUnique({
+    where: { id },
+    select: { id: true, email: true, name: true, createdAt: true },
+  });
+}
