@@ -88,9 +88,9 @@ export async function updateTask(
     assigneeId?: string | null;
   }
 ) {
-  // Tenant isolation: task -> project -> workspace must all match the URL
+  // Tenant isolation: task > project > workspace must all match the URL
   const existing = await prisma.task.findFirst({
-    where: { id: taskId, projectId, project: { workspaceId } },
+    where: { id: taskId, projectId, project: { workspaceId }},
     select: { id: true, status: true },
   });
   if (!existing) throw new Error("TASK_NOT_FOUND");
