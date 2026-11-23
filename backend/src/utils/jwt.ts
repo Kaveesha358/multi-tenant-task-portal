@@ -1,10 +1,20 @@
 import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
 import { randomUUID } from "node:crypto";
 
-function getSecret(name: "JWT_ACCESS_SECRET" | "JWT_REFRESH_SECRET") {
+type SecretName = "JWT_ACCESS_SECRET" | "JWT_REFRESH_SECRET";
+
+function getSecret(name: SecretName) {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set`);
   return value;
+}
+
+function subjectOf(payload: string | JwtPayload) {
+  if (typeof payload === "string" || !payload.sub) {
+    throw new Error("INVALID_TOKEN");
+  }
+  return payload.sub;
 }
 
 export function signAccessToken(userId: string) {
@@ -21,9 +31,9 @@ export function signRefreshToken(userId: string) {
 }
 
 export function verifyAccessToken(token: string) {
-  const payload = jwt.verify(token, getSecret("JWT_ACCESS_SECRET"));
-  if (typeof payload === "string" || !payload.sub) {
-    throw new Error("INVALID_TOKEN");
-  }
-  return payload.sub;
+  return subjectOf(jwt.verify(token, getSecret("JWT_ACCESS_SECRET")));
+}
+
+export function verifyRefreshToken(token: string) {
+  return subjectOf(jwt.verify(token, getSecret("JWT_REFRESH_SECRET")));
 }
