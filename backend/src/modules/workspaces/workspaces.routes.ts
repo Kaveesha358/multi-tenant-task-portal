@@ -19,7 +19,7 @@ const createSchema = z.object({
 });
 
 const addMemberSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   role: z.enum(["ADMIN", "MEMBER", "VIEWER"]),
 });
 

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { config } from "./config";
 import authRoutes from "./modules/auth/auth.routes";
 import workspaceRoutes from "./modules/workspaces/workspaces.routes";
 import projectRoutes from "./modules/projects/projects.routes";
@@ -8,7 +9,8 @@ import auditRoutes from "./modules/audit/audit.routes";
 
 const app = express();
 
-app.use(cors());
+// Only the configured frontend origin(s) may call this API from a browser
+app.use(cors({ origin: config.CORS_ORIGIN.split(",").map((o) => o.trim()) }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
