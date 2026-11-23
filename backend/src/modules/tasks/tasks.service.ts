@@ -78,6 +78,7 @@ export async function updateTask(
   workspaceId: string,
   projectId: string,
   taskId: string,
+  actorId: string,
   input: {
     title?: string;
     description?: string | null;
@@ -90,28 +91,47 @@ export async function updateTask(
   // Tenant isolation: task -> project -> workspace must all match the URL
   const existing = await prisma.task.findFirst({
     where: { id: taskId, projectId, project: { workspaceId } },
-    select: { id: true },
+    select: { id: true, status: true },
   });
   if (!existing) throw new Error("TASK_NOT_FOUND");
 
   if (input.assigneeId) await assertAssignee(workspaceId, input.assigneeId);
 
-  return prisma.task.update({
-    where: { id: taskId },
-    data: {
-      title: input.title,
-      description: input.description,
-      status: input.status,
-      priority: input.priority,
-      dueDate:
-        input.dueDate === undefined
-          ? undefined
-          : input.dueDate === null
-            ? null
-            : new Date(input.dueDate),
-      assigneeId: input.assigneeId,
-    },
-    select: taskSelect,
+  // Update + audit log happen together: both succeed or both fail
+  return prisma.$transaction(async (tx) => {
+    const task = await tx.task.update({
+      where: { id: taskId },
+      data: {
+        title: input.title,
+        description: input.description,
+        status: input.status,
+        priority: input.priority,
+        dueDate:
+          input.dueDate === undefined
+            ? undefined
+            : input.dueDate === null
+              ? null
+              : new Date(input.dueDate),
+        assigneeId: input.assigneeId,
+      },
+      select: taskSelect,
+    });
+
+    if (input.status && input.status !== existing.status) {
+      await tx.auditLog.create({
+        data: {
+          workspaceId,
+          userId: actorId,
+          action: "TASK_STATUS_CHANGED",
+          entityType: "Task",
+          entityId: taskId,
+          oldValue: existing.status,
+          newValue: input.status,
+        },
+      });
+    }
+
+    return task;
   });
 }
 

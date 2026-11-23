@@ -102,6 +102,7 @@ router.patch(
         res.locals.workspaceId,
         String(req.params.projectId),
         String(req.params.taskId),
+        res.locals.userId,
         parsed.data
       );
       return res.json(task);
